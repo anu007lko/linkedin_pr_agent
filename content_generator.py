@@ -6,11 +6,69 @@ from urllib.parse import quote
 import requests
 import config
 
+def _call_gemini(prompt: str) -> str:
+    """Calls Google Gemini API via REST."""
+    api_key = config.GEMINI_API_KEY
+    if not api_key or "your_gemini" in api_key:
+        return ""
+    
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.7,
+            "maxOutputTokens": 8192
+        }
+    }
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=60)
+        response.raise_for_status()
+        res_json = response.json()
+        return res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
+    except Exception as e:
+        print(f"Error calling Gemini API: {e}")
+        return ""
+
+def _call_anthropic(prompt: str) -> str:
+    """Calls Anthropic Claude API via REST."""
+    api_key = config.ANTHROPIC_API_KEY
+    if not api_key or "your_anthropic" in api_key:
+        return ""
+    
+    url = "https://api.anthropic.com/v1/messages"
+    headers = {
+        "x-api-key": api_key,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+    }
+    payload = {
+        "model": "claude-3-5-sonnet-20241022",
+        "max_tokens": 1000,
+        "messages": [{"role": "user", "content": prompt}]
+    }
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=60)
+        response.raise_for_status()
+        res_json = response.json()
+        return res_json["content"][0]["text"].strip()
+    except Exception as e:
+        print(f"Error calling Anthropic API: {e}")
+        return ""
+
 def _call_groq(prompt: str, max_retries: int = 3) -> str:
-    """Calls Groq API with Llama 3.1 70b and retry logic for 429 (rate limits) and other errors."""
+    """Calls Groq API with Llama 3.3 70b and retry logic. Falls back to Gemini or Anthropic if key is missing."""
     api_key = config.GROQ_API_KEY
-    if not api_key:
-        print("Error: GROQ_API_KEY is missing from config.")
+    if not api_key or "your_groq" in api_key:
+        # Check Gemini fallback
+        if config.GEMINI_API_KEY and "your_gemini" not in config.GEMINI_API_KEY:
+            print("Groq key is missing/placeholder. Falling back to Google Gemini...")
+            return _call_gemini(prompt)
+        # Check Anthropic fallback
+        if config.ANTHROPIC_API_KEY and "your_anthropic" not in config.ANTHROPIC_API_KEY:
+            print("Groq and Gemini keys are missing/placeholder. Falling back to Anthropic Claude...")
+            return _call_anthropic(prompt)
+        print("Error: No valid LLM API keys configured.")
         return ""
         
     url = "https://api.groq.com/openai/v1/chat/completions"
@@ -35,6 +93,10 @@ def _call_groq(prompt: str, max_retries: int = 3) -> str:
                     continue
                 else:
                     print("Groq API returned 429 (Rate Limit). Max retries exceeded.")
+                    # Try fallback instead of returning empty
+                    if config.GEMINI_API_KEY and "your_gemini" not in config.GEMINI_API_KEY:
+                        print("Falling back to Google Gemini...")
+                        return _call_gemini(prompt)
                     return ""
             response.raise_for_status()
             result = response.json()["choices"][0]["message"]["content"].strip()
@@ -45,6 +107,10 @@ def _call_groq(prompt: str, max_retries: int = 3) -> str:
                 time.sleep(5)
             else:
                 print(f"Error calling Groq API: {e}")
+                # Try fallback
+                if config.GEMINI_API_KEY and "your_gemini" not in config.GEMINI_API_KEY:
+                    print("Falling back to Google Gemini...")
+                    return _call_gemini(prompt)
                 return ""
     return ""
 
