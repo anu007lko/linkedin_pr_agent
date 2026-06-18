@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinkedIn AI Agent â Workflow</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0A1628;
+    --navy-mid: #0F2040;
+    --navy-light: #162D50;
+    --blue: #0077B5;
+    --blue-bright: #00A0DC;
+    --gold: #F4B942;
+    --gold-dim: #C8952E;
+    --white: #F0F4F8;
+    --gray: #8899AA;
+    --green: #00C896;
+    --red: #FF4B6E;
+    --purple: #9B6DFF;
+  }
+
+  body {
+    background: var(--navy);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    margin-bottom: 60px;
+    position: relative;
+  }
+  .header::after {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 3px;
+    background: var(--gold);
+    margin: 20px auto 0;
+  }
+  .badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    color: var(--blue-bright);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1.1;
+  }
+  h1 span { color: var(--gold); }
+  .subtitle {
+    margin-top: 12px;
+    color: var(--gray);
+    font-size: 15px;
+    font-weight: 400;
+  }
+
+  /* STATS ROW */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+  .stat-card {
+    background: var(--navy-mid);
+    border: 1px solid var(--navy-light);
+    border-top: 3px solid var(--gold);
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .stat-number {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--gold);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  /* SECTION TITLES */
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--blue-bright);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--navy-light);
+  }
+
+  /* WORKFLOW PIPELINE */
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    margin-bottom: 48px;
+    position: relative;
+  }
+  .pipeline::before {
+    content: '';
+    position: absolute;
+    top: 52px;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--blue) 0%, var(--gold) 50%, var(--green) 100%);
+    z-index: 0;
+  }
+  .pipeline-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    padding: 0 8px;
+  }
+  .step-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 16px;
+    border: 2px solid var(--navy-light);
+    background: var(--navy-mid);
+    transition: transform 0.2s;
+  }
+  .step-icon:hover { transform: scale(1.1); }
+  .step-1 .step-icon { border-color: var(--blue); background: rgba(0,119,181,0.15); }
+  .step-2 .step-icon { border-color: var(--purple); background: rgba(155,109,255,0.15); }
+  .step-3 .step-icon { border-color: var(--gold); background: rgba(244,185,66,0.15); }
+  .step-4 .step-icon { border-color: var(--green); background: rgba(0,200,150,0.15); }
+  .step-5 .step-icon { border-color: var(--red); background: rgba(255,75,110,0.15); }
+  .step-name {
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .step-desc {
+    font-size: 11px;
+    color: var(--gray);
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* TWO COLUMN GRID */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 48px; }
+  .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 48px; }
+
+  /* CARDS */
+  .card {
+    background: var(--navy-mid);
+    border: 1px solid var(--navy-light);
+    border-radius: 10px;
+    padding: 24px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+
+  /* TOOL PILLS */
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tool-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid;
+  }
+  .pill-blue { border-color: var(--blue); color: var(--blue-bright); background: rgba(0,119,181,0.1); }
+  .pill-gold { border-color: var(--gold-dim); color: var(--gold); background: rgba(244,185,66,0.1); }
+  .pill-green { border-color: var(--green); color: var(--green); background: rgba(0,200,150,0.1); }
+  .pill-purple { border-color: var(--purple); color: var(--purple); background: rgba(155,109,255,0.1); }
+  .pill-red { border-color: var(--red); color: var(--red); background: rgba(255,75,110,0.1); }
+  .pill-gray { border-color: var(--gray); color: var(--gray); background: rgba(136,153,170,0.1); }
+
+  /* API TABLE */
+  .api-table { width: 100%; border-collapse: collapse; }
+  .api-table tr { border-bottom: 1px solid var(--navy-light); }
+  .api-table tr:last-child { border-bottom: none; }
+  .api-table td { padding: 10px 0; font-size: 13px; }
+  .api-table td:first-child { color: var(--white); font-weight: 500; width: 40%; }
+  .api-table td:nth-child(2) { color: var(--gray); font-size: 11px; }
+  .api-table td:last-child { text-align: right; }
+  .status-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+  }
+  .status-dot.orange { background: var(--gold); box-shadow: 0 0 6px var(--gold); }
+
+  /* SCHEDULE */
+  .schedule-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+  .day-card {
+    background: var(--navy-light);
+    border-radius: 8px;
+    padding: 12px 8px;
+    text-align: center;
+  }
+  .day-card.active { background: rgba(0,119,181,0.2); border: 1px solid var(--blue); }
+  .day-card.report { background: rgba(244,185,66,0.1); border: 1px solid var(--gold-dim); }
+  .day-card.rest { opacity: 0.4; }
+  .day-name { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gray); margin-bottom: 6px; }
+  .day-time { font-size: 12px; font-weight: 600; color: var(--white); font-family: 'JetBrains Mono', monospace; }
+  .day-topic { font-size: 9px; color: var(--gray); margin-top: 4px; line-height: 1.3; }
+
+  /* SKILL ITEMS */
+  .skill-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--navy-light);
+  }
+  .skill-item:last-child { border-bottom: none; }
+  .skill-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .skill-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .skill-desc { font-size: 11px; color: var(--gray); line-height: 1.5; }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    padding: 32px 0 0;
+    border-top: 1px solid var(--navy-light);
+    color: var(--gray);
+    font-size: 12px;
+  }
+  .footer strong { color: var(--gold); }
+
+  /* CLOUD BADGE */
+  .cloud-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,200,150,0.1);
+    border: 1px solid var(--green);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 12px;
+    color: var(--green);
+    font-weight: 500;
+    margin-bottom: 32px;
+  }
+  .pulse {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+
+  @media (max-width: 768px) {
+    .pipeline { grid-template-columns: 1fr; }
+    .pipeline::before { display: none; }
+    .two-col, .three-col { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .schedule-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="badge">Tarun Srivastava Â· AI Agent Architecture</div>
+    <h1>LinkedIn <span>AI PR Agent</span><br>Workflow</h1>
+    <p class="subtitle">Autonomous Â· Free Stack Â· Google Cloud Â· EST Schedule</p>
+  </div>
+
+  <div style="text-align:center">
+    <div class="cloud-badge">
+      <div class="pulse"></div>
+      Live on Google Cloud VM Â· 24/7 Autonomous
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-number">2</div>
+      <div class="stat-label">Active Agents</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">5x</div>
+      <div class="stat-label">Posts / Week</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">$0</div>
+      <div class="stat-label">Monthly Cost</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">7+</div>
+      <div class="stat-label">APIs Connected</div>
+    </div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="section-title">Agent Workflow Pipeline</div>
+  <div class="pipeline">
+    <div class="pipeline-step step-1">
+      <div class="step-icon">ð</div>
+      <div class="step-name">Research</div>
+      <div class="step-desc">RSS feeds scan AI & HR news daily</div>
+    </div>
+    <div class="pipeline-step step-2">
+      <div class="step-icon">âï¸</div>
+      <div class="step-name">Generate</div>
+      <div class="step-desc">Groq llama-3.3-70b writes premium post</div>
+    </div>
+    <div class="pipeline-step step-3">
+      <div class="step-icon">ð¼ï¸</div>
+      <div class="step-name">Image</div>
+      <div class="step-desc">Unsplash fetches HD relevant photo</div>
+    </div>
+    <div class="pipeline-step step-4">
+      <div class="step-icon">ð¤</div>
+      <div class="step-name">Publish</div>
+      <div class="step-desc">LinkedIn Official API posts content</div>
+    </div>
+    <div class="pipeline-step step-5">
+      <div class="step-icon">ð</div>
+      <div class="step-name">Learn</div>
+      <div class="step-desc">Memory tracks topics & performance</div>
+    </div>
+  </div>
+
+  <!-- TOOLS + APIS -->
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--blue)"></div> Tools & Stack</div>
+      <div class="tools">
+        <span class="tool-pill pill-blue">ð Python 3.11</span>
+        <span class="tool-pill pill-gold">âï¸ Google Cloud VM</span>
+        <span class="tool-pill pill-green">ð¦ nohup daemon</span>
+        <span class="tool-pill pill-purple">ð schedule library</span>
+        <span class="tool-pill pill-blue">ð¡ feedparser</span>
+        <span class="tool-pill pill-gray">ð local JSON memory</span>
+        <span class="tool-pill pill-gold">ð§ Gmail SMTP</span>
+        <span class="tool-pill pill-green">ð§ Debian Linux</span>
+        <span class="tool-pill pill-purple">ð crontab autostart</span>
+        <span class="tool-pill pill-blue">ð requests library</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--gold)"></div> APIs Connected</div>
+      <table class="api-table">
+        <tr><td>LinkedIn Official API</td><td>Post content + URN</td><td><span class="status-dot"></span></td></tr>
+        <tr><td>Groq API</td><td>llama-3.3-70b writing</td><td><span class="status-dot"></span></td></tr>
+        <tr><td>Unsplash API</td><td>HD photo search</td><td><span class="status-dot"></span></td></tr>
+        <tr><td>Hunter.io API</td><td>Lead email finder</td><td><span class="status-dot"></span></td></tr>
+        <tr><td>Snov.io API</td><td>Lead enrichment</td><td><span class="status-dot orange"></span></td></tr>
+        <tr><td>Prospeo API</td><td>Contact finder</td><td><span class="status-dot orange"></span></td></tr>
+        <tr><td>Google News RSS</td><td>Free news search</td><td><span class="status-dot"></span></td></tr>
+        <tr><td>Gmail SMTP</td><td>Notifications</td><td><span class="status-dot"></span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div class="section-title">Weekly Post Schedule (EST)</div>
+  <div style="margin-bottom: 48px;">
+    <div class="schedule-grid">
+      <div class="day-card active">
+        <div class="day-name">Mon</div>
+        <div class="day-time">9:00 AM</div>
+        <div class="day-topic">AI Tools & Breakthroughs</div>
+      </div>
+      <div class="day-card active">
+        <div class="day-name">Tue</div>
+        <div class="day-time">12:00 PM</div>
+        <div class="day-topic">AI in Human Resources</div>
+      </div>
+      <div class="day-card active">
+        <div class="day-name">Wed</div>
+        <div class="day-time">9:00 AM</div>
+        <div class="day-topic">New AI Launches</div>
+      </div>
+      <div class="day-card active">
+        <div class="day-name">Thu</div>
+        <div class="day-time">12:00 PM</div>
+        <div class="day-topic">AI in Talent Acquisition</div>
+      </div>
+      <div class="day-card active">
+        <div class="day-name">Fri</div>
+        <div class="day-time">9:00 AM</div>
+        <div class="day-topic">Mix All Topics</div>
+      </div>
+      <div class="day-card rest">
+        <div class="day-name">Sat</div>
+        <div class="day-time">â</div>
+        <div class="day-topic">Rest</div>
+      </div>
+      <div class="day-card report">
+        <div class="day-name">Sun</div>
+        <div class="day-time">6:00 PM</div>
+        <div class="day-topic">Weekly Report Email</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SKILLS + RULES -->
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--purple)"></div> Agent Skills</div>
+      <div class="skill-item">
+        <div class="skill-icon">ð¬</div>
+        <div><div class="skill-name">Research Skill</div><div class="skill-desc">Scans RSS feeds from TechCrunch, VentureBeat, AI News daily for fresh topics</div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-icon">âï¸</div>
+        <div><div class="skill-name">Writing Skill</div><div class="skill-desc">Groq 70b model writes in Tarun's voice â punchy hooks, insights, CTA under 100 words</div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-icon">ð§ </div>
+        <div><div class="skill-name">Memory Skill</div><div class="skill-desc">Tracks all posted topics in memory.json â never repeats within 7 days</div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-icon">ð¼ï¸</div>
+        <div><div class="skill-name">Image Skill</div><div class="skill-desc">Extracts specific keywords â fetches perfectly relevant HD photo from Unsplash</div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-icon">ð</div>
+        <div><div class="skill-name">Learning Skill</div><div class="skill-desc">After 10 posts, auto-adjusts topic weights based on engagement performance</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--red)"></div> Agent Rules</div>
+      <div class="skill-item">
+        <div class="skill-icon">ð«</div>
+        <div><div class="skill-name">No Repeats</div><div class="skill-desc">Same topic blocked for 7 days after posting</div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-icon">#ï¸â£</div>
+        <div><div class="skill-name">Hashtag Rule</div><div class="skill-desc">Always 3-5 relevant hashtags including #AIinHR or #TalentAcquisition</div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-icon">ð</div>
+        <div><div class="skill-name">Word Limit</div><div class="skill-desc">Posts strictly under 100 words. No corporate speak. No passive voice.</div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-icon">ð</div>
+        <div><div class="skill-name">Retry Logic</div><div class="skill-desc">If API fails â wait â retry 3x. If LinkedIn blocks â wait 24hrs.</div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-icon">ð</div>
+        <div><div class="skill-name">Content Mix</div><div class="skill-desc">40% AI tools Â· 25% AI in HR Â· 20% New launches Â· 15% Talent Acquisition</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TWO AGENTS -->
+  <div class="section-title">Two Autonomous Agents</div>
+  <div class="two-col">
+    <div class="card" style="border-top: 3px solid var(--blue);">
+      <div class="card-title"><div class="dot" style="background:var(--blue)"></div> PR Posting Agent Â· main.py</div>
+      <div class="tools" style="margin-bottom:16px">
+        <span class="tool-pill pill-blue">LinkedIn API</span>
+        <span class="tool-pill pill-purple">Groq 70b</span>
+        <span class="tool-pill pill-gold">Unsplash</span>
+        <span class="tool-pill pill-green">Gmail</span>
+      </div>
+      <div style="font-size:12px; color:var(--gray); line-height:1.8;">
+        â Runs MonâFri on EST schedule<br>
+        â Researches AI/HR news via RSS<br>
+        â Writes post in Tarun's voice<br>
+        â Fetches relevant HD image<br>
+        â Posts via LinkedIn Official API<br>
+        â Logs to memory.json<br>
+        â Emails notification to Tarun
+      </div>
+    </div>
+    <div class="card" style="border-top: 3px solid var(--green);">
+      <div class="card-title"><div class="dot" style="background:var(--green)"></div> Lead Generation Agent Â· lead_agent.py</div>
+      <div class="tools" style="margin-bottom:16px">
+        <span class="tool-pill pill-green">Hunter.io</span>
+        <span class="tool-pill pill-gold">Snov.io</span>
+        <span class="tool-pill pill-purple">Prospeo</span>
+        <span class="tool-pill pill-blue">Google RSS</span>
+      </div>
+      <div style="font-size:12px; color:var(--gray); line-height:1.8;">
+        â Runs daily at 10AM EST<br>
+        â Scans RSS for hiring intent signals<br>
+        â Extracts company names via Ollama<br>
+        â Finds HR contacts via Hunter.io<br>
+        â Scores leads 1â10 (7+ = hot)<br>
+        â Saves to leads.json + leads.csv<br>
+        â Emails daily lead summary
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT RULES -->
+  <div class="section-title">Post Content Rules</div>
+  <div class="three-col" style="margin-bottom:48px">
+    <div class="card" style="border-left: 3px solid var(--gold);">
+      <div style="font-size:11px; color:var(--gold); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px">Hook (Line 1)</div>
+      <div style="font-size:12px; color:var(--gray); line-height:1.8;">
+        Shocking stat<br>
+        Bold statement<br>
+        Personal story opener<br>
+        Provocative question
+      </div>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--blue);">
+      <div style="font-size:11px; color:var(--blue-bright); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px">Body (Lines 3â5)</div>
+      <div style="font-size:12px; color:var(--gray); line-height:1.8;">
+        Max 3 short punchy lines<br>
+        12 words per line max<br>
+        Real insight from news<br>
+        Tarun's expert voice
+      </div>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--green);">
+      <div style="font-size:11px; color:var(--green); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px">CTA (Lines 7â10)</div>
+      <div style="font-size:12px; color:var(--gray); line-height:1.8;">
+        Practical takeaway<br>
+        Start with action verb<br>
+        Engagement question<br>
+        3â5 hashtags
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    Built by <strong>Tarun Srivastava</strong> Â· Google Antigravity + Zero Coding Â· June 2026
+    <div style="margin-top:8px; font-size:10px; letter-spacing:2px; text-transform:uppercase">
+      Autonomous Â· Free Forever Â· Google Cloud
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
