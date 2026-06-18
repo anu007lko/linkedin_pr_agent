@@ -164,17 +164,21 @@ def start_scheduler():
     """Sets up the schedule and runs it in an infinite loop."""
     print("Setting up schedule...")
     
-    # Daily Posting Schedule (times in EST)
-    # Selection of topics is now dynamic (based on weights) to allow posting frequency adjustments.
-    schedule.every().monday.at("09:00").do(job)
-    schedule.every().tuesday.at("12:00").do(job)
-    schedule.every().wednesday.at("09:00").do(job)
-    schedule.every().thursday.at("12:00").do(job)
-    schedule.every().friday.at("09:00").do(job)
-    
-    
-    # 3. Weekly Summary Performance Email (Sunday 6:00 PM EST)
-    schedule.every().sunday.at("18:00").do(send_weekly_report_job)
+    # Daily Posting Schedule
+    # Times are in UTC (Cloud VM timezone). EST = UTC-4, so add 4 hours to convert.
+    # Mon 9:00 AM EST  = 13:00 UTC
+    # Tue 12:00 PM EST = 16:00 UTC
+    # Wed 9:00 AM EST  = 13:00 UTC
+    # Thu 12:00 PM EST = 16:00 UTC
+    # Fri 9:00 AM EST  = 13:00 UTC
+    schedule.every().monday.at("13:00").do(job)
+    schedule.every().tuesday.at("16:00").do(job)
+    schedule.every().wednesday.at("13:00").do(job)
+    schedule.every().thursday.at("16:00").do(job)
+    schedule.every().friday.at("13:00").do(job)
+
+    # Weekly Summary Performance Email (Sunday 6:00 PM EST = 22:00 UTC)
+    schedule.every().sunday.at("22:00").do(send_weekly_report_job)
     
     print("Scheduler is running. Press Ctrl+C to exit. Agent is now fully autonomous.")
     while True:
