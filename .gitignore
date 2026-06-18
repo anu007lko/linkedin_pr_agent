@@ -1,0 +1,10 @@
+.env
+*.log
+memory.json
+leads.json
+leads.csv
+__pycache__/
+*.pyc
+*.bak
+.DS_Store
+/tmp/
