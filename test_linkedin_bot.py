@@ -5,7 +5,8 @@ from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 
 # Add project path to python search path
-sys.path.append("/Users/tarunsrivastava/.gemini/antigravity/scratch/linkedin_pr_agent")
+project_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(project_dir)
 
 from memory_manager import init_memory, load_memory, save_memory, log_post
 from linkedin_api import (
@@ -16,7 +17,7 @@ from linkedin_api import (
 import config
 
 # Set CWD to the project folder
-os.chdir("/Users/tarunsrivastava/.gemini/antigravity/scratch/linkedin_pr_agent")
+os.chdir(project_dir)
 
 # Set dummy credentials for testing
 config.LINKEDIN_ACCESS_TOKEN = "test_linkedin_token"

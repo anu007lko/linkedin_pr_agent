@@ -22,7 +22,7 @@
     </array>
 
     <key>WorkingDirectory</key>
-    <string>/Users/tarunsrivastava/.gemini/antigravity/scratch/linkedin_pr_agent</string>
+    <string>/path/to/linkedin_pr_agent</string>
 
     <key>RunAtLoad</key>
     <true/>
@@ -31,9 +31,9 @@
     <true/>
 
     <key>StandardOutPath</key>
-    <string>/Users/tarunsrivastava/.gemini/antigravity/scratch/linkedin_pr_agent/agent.out.log</string>
+    <string>/path/to/linkedin_pr_agent/agent.out.log</string>
     
     <key>StandardErrorPath</key>
-    <string>/Users/tarunsrivastava/.gemini/antigravity/scratch/linkedin_pr_agent/agent.err.log</string>
+    <string>/path/to/linkedin_pr_agent/agent.err.log</string>
 </dict>
 </plist>

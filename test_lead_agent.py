@@ -5,7 +5,8 @@ import time
 from unittest.mock import patch, MagicMock
 
 # Add project path to python search path
-sys.path.append("/Users/tarunsrivastava/.gemini/antigravity/scratch/linkedin_pr_agent")
+project_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(project_dir)
 
 from lead_memory import init_memory, add_leads, load_leads
 from lead_searcher import (
@@ -20,7 +21,7 @@ from lead_notifier import send_lead_summary_notification
 import config
 
 # Set CWD to the project folder
-os.chdir("/Users/tarunsrivastava/.gemini/antigravity/scratch/linkedin_pr_agent")
+os.chdir(project_dir)
 
 # Set dummy credentials
 config.HUNTER_API_KEY = "test_hunter_key"

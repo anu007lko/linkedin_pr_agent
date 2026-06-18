@@ -3,7 +3,8 @@ import os
 import json
 
 # Add project path to python search path
-sys.path.append("/Users/tarunsrivastava/.gemini/antigravity/scratch/linkedin_pr_agent")
+project_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(project_dir)
 
 from memory_manager import init_memory, adjust_posting_weights, load_memory, save_memory, get_topic_weights
 from content_generator import generate_reply, generate_post_image
@@ -11,7 +12,7 @@ from main import send_weekly_report_job
 import config
 
 # Set CWD to the project folder so it reads memory.json from there
-os.chdir("/Users/tarunsrivastava/.gemini/antigravity/scratch/linkedin_pr_agent")
+os.chdir(project_dir)
 config.GROQ_API_KEY = "test_groq_key"
 config.UNSPLASH_ACCESS_KEY = "test_unsplash_key"
 
