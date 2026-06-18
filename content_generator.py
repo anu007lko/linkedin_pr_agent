@@ -92,12 +92,21 @@ def _call_groq(prompt: str, max_retries: int = 3) -> str:
                     time.sleep(30)
                     continue
                 else:
-                    print("Groq API returned 429 (Rate Limit). Max retries exceeded.")
-                    # Try fallback instead of returning empty
+                    print("Groq API returned 429 (Rate Limit). Max retries exceeded. Falling back...")
                     if config.GEMINI_API_KEY and "your_gemini" not in config.GEMINI_API_KEY:
                         print("Falling back to Google Gemini...")
                         return _call_gemini(prompt)
+                    if config.ANTHROPIC_API_KEY and "your_anthropic" not in config.ANTHROPIC_API_KEY:
+                        print("Falling back to Anthropic Claude...")
+                        return _call_anthropic(prompt)
                     return ""
+            if response.status_code == 413:
+                print(f"Groq API returned 413 (Payload Too Large). Prompt is too long. Falling back to Gemini...")
+                if config.GEMINI_API_KEY and "your_gemini" not in config.GEMINI_API_KEY:
+                    return _call_gemini(prompt)
+                if config.ANTHROPIC_API_KEY and "your_anthropic" not in config.ANTHROPIC_API_KEY:
+                    return _call_anthropic(prompt)
+                return ""
             response.raise_for_status()
             result = response.json()["choices"][0]["message"]["content"].strip()
             return result
@@ -107,10 +116,12 @@ def _call_groq(prompt: str, max_retries: int = 3) -> str:
                 time.sleep(5)
             else:
                 print(f"Error calling Groq API: {e}")
-                # Try fallback
                 if config.GEMINI_API_KEY and "your_gemini" not in config.GEMINI_API_KEY:
                     print("Falling back to Google Gemini...")
                     return _call_gemini(prompt)
+                if config.ANTHROPIC_API_KEY and "your_anthropic" not in config.ANTHROPIC_API_KEY:
+                    print("Falling back to Anthropic Claude...")
+                    return _call_anthropic(prompt)
                 return ""
     return ""
 
@@ -150,13 +161,18 @@ Additional Rules:
 - Do not repeat this prompt or include meta-commentary like "Here is the announcement".
 """
     else:
-        # Format search results into a context string
+        # Format search results into a context string, truncated to prevent 413 errors
+        MAX_CONTEXT_CHARS = 3000
         context = ""
         for idx, res in enumerate(search_results, 1):
             if isinstance(res, dict):
-                context += f"{idx}. Title: {res.get('title', '')}\nSnippet: {res.get('snippet', '')}\nLink: {res.get('link', '')}\n\n"
+                entry = f"{idx}. Title: {res.get('title', '')}\nSnippet: {res.get('snippet', '')}\nLink: {res.get('link', '')}\n\n"
             else:
-                context += f"{idx}. {str(res)}\n\n"
+                entry = f"{idx}. {str(res)}\n\n"
+            if len(context) + len(entry) > MAX_CONTEXT_CHARS:
+                context += f"[...truncated to stay within API limits]\n"
+                break
+            context += entry
 
         prompt = f"""{system_instruction}
 
