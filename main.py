@@ -4,7 +4,7 @@ import schedule
 from search_agent import search_topic
 from content_generator import generate_linkedin_post, generate_post_image
 from linkedin_api import post_to_linkedin
-from memory_manager import init_memory, can_post_category, log_post, get_topic_weights, adjust_posting_weights, load_memory
+from memory_manager import init_memory, can_post_category, log_post, get_topic_weights, adjust_posting_weights, load_memory, get_least_recently_posted_category
 from notifier import send_notification
 
 def pick_topic() -> str:
@@ -21,25 +21,21 @@ def job(specific_topic=None):
     selected_topic = specific_topic
     
     if not selected_topic:
-        # Try up to 10 times to find a topic that hasn't been posted in the last 7 days
+        # Try up to 10 times to find a topic that hasn't been posted in the last 3 days
         for _ in range(10):
             topic = pick_topic()
-            if can_post_category(topic):
+            if can_post_category(topic, days=3):
                 selected_topic = topic
                 break
-                
-    if not selected_topic:
-        msg = "Could not find a valid topic that hasn't been posted in the last 7 days. Skipping today."
-        print(msg)
-        send_notification("LinkedIn Agent: Skipped", msg)
-        return
+        
+        # Fallback: if all topics are on 3-day cooldown, pick the least recently posted category
+        if not selected_topic:
+            selected_topic = get_least_recently_posted_category()
+            print(f"Fallback: All categories recently posted. Selected least recently posted category: {selected_topic}")
 
-    # Check memory even if specific topic is provided to respect the 7-day rule
-    if specific_topic and not can_post_category(selected_topic):
-        msg = f"Warning: '{selected_topic}' was posted within the last 7 days. Skipping today to adhere to rules."
-        print(msg)
-        send_notification("LinkedIn Agent: Skipped", msg)
-        return
+    # For manually/specifically requested topics, print warning but don't skip
+    if specific_topic and not can_post_category(selected_topic, days=3):
+        print(f"Warning: '{selected_topic}' was posted within the last 3 days, but proceeding as it was explicitly requested.")
 
     print(f"Selected Topic: {selected_topic}")
     

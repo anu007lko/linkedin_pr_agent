@@ -100,20 +100,44 @@ def add_replied_comment(scraped_content: str, comment_sig: str):
             break
     save_memory(data)
 
-def can_post_category(category: str) -> bool:
-    """Checks if the category was posted in the last 7 days."""
+def can_post_category(category: str, days: int = 3) -> bool:
+    """Checks if the category was posted in the last N days (defaults to 3 days to avoid deadlocks)."""
     data = load_memory()
-    seven_days_ago = datetime.now() - timedelta(days=7)
+    cooldown_period = datetime.now() - timedelta(days=days)
     
     for post in data.get("posts", []):
         if post.get("category") == category:
             try:
                 post_date = datetime.fromisoformat(post.get("date"))
-                if post_date > seven_days_ago:
+                if post_date > cooldown_period:
                     return False
             except ValueError:
                 pass
     return True
+
+def get_least_recently_posted_category() -> str:
+    """Finds the category that was posted least recently among the default weights."""
+    data = load_memory()
+    categories = list(DEFAULT_WEIGHTS.keys())
+    
+    # Track the last post date for each category
+    last_post_dates = {}
+    for cat in categories:
+        last_post_dates[cat] = datetime.min
+        
+    for post in data.get("posts", []):
+        cat = post.get("category")
+        if cat in last_post_dates:
+            try:
+                post_date = datetime.fromisoformat(post.get("date"))
+                if post_date > last_post_dates[cat]:
+                    last_post_dates[cat] = post_date
+            except ValueError:
+                pass
+                
+    # Sort categories by date ascending (oldest first)
+    sorted_categories = sorted(categories, key=lambda c: last_post_dates[c])
+    return sorted_categories[0]
 
 def get_topic_weights() -> dict:
     """Returns the current topic weights from memory."""
