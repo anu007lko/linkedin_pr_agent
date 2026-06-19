@@ -211,9 +211,8 @@ Rules:
 def generate_post_image(post_content: str) -> tuple[str, str]:
     """
     Generates a premium image for the post using Unsplash API photo fetching.
-    First, uses Groq to extract 2-3 search keywords from the post.
-    Then, searches Unsplash and downloads the highest resolution landscape image.
-    Avoids using any image that was previously used by checking memory.json.
+    First, uses Groq to extract a single highly descriptive search phrase (2-4 words) from the post.
+    Then, searches Unsplash, filters out used images, and picks one randomly from the top results.
     Returns (file_path, unsplash_id) on success, or (None, None) on failure.
     """
     api_key = config.UNSPLASH_ACCESS_KEY
@@ -235,40 +234,37 @@ def generate_post_image(post_content: str) -> tuple[str, str]:
         except Exception as e:
             print(f"Error reading used Unsplash IDs from memory: {e}")
 
-    # Step 1: Use Groq to extract 3-4 search keywords from post
+    # Step 1: Use Groq to extract a single descriptive search phrase
     keyword_prompt = f"""You are an expert photo researcher for LinkedIn content.
-Given this LinkedIn post, extract 3-4 VERY SPECIFIC search keywords for finding a perfectly relevant professional photo.
+Given this LinkedIn post, extract a single highly descriptive search phrase (2-4 words) that will find a visually stunning, relevant, and modern professional photo on Unsplash.
 
 POST: {post_content}
 
 RULES:
-- Keywords must reflect the EXACT topic of the post
-- Be specific not generic
-- NO generic words like 'business', 'technology', 'people'
-- Examples:
-  Post about AI hiring tools → 'automated resume screening'
-  Post about workspace automation → 'robotic process automation software'
+- The search phrase must be specific to the core idea of the post (e.g. 'resume screening software', 'office robotic automation', 'cloud computing datacenter', 'creative team brainstorming').
+- Do not use generic terms like 'AI', 'technology', 'business', 'people', or 'success'.
+- Output ONLY the search phrase, with no quotes, punctuation, or extra text."""
 
-Return ONLY the keywords as a comma-separated list, nothing else."""
-    print("Generating Unsplash search keywords using Groq...")
-    keywords = _call_groq(keyword_prompt)
-    if not keywords:
-        print("Failed to generate search keywords from post.")
+    print("Generating Unsplash search phrase using Groq...")
+    search_phrase = _call_groq(keyword_prompt)
+    if not search_phrase:
+        print("Failed to generate search phrase from post.")
         return None, None
 
-    print(f"Extracted Unsplash keywords: {keywords}")
+    search_phrase = search_phrase.strip().strip('"').strip("'")
+    print(f"Extracted Unsplash search phrase: {search_phrase}")
     
-    # Step 2: Search Unsplash
+    # Step 2: Search Unsplash (fetch 20 results to have a rich selection pool)
     try:
         url = "https://api.unsplash.com/search/photos"
         params = {
-            "query": keywords.strip(),
-            "per_page": 5,
+            "query": search_phrase,
+            "per_page": 20,
             "orientation": "landscape",
             "content_filter": "high"
         }
         headers = {"Authorization": f"Client-ID {api_key}"}
-        print(f"Querying Unsplash API for photos with query: '{keywords.strip()}'...")
+        print(f"Querying Unsplash API for photos with query: '{search_phrase}'...")
         response = requests.get(url, headers=headers, params=params, timeout=30)
         response.raise_for_status()
         photos = response.json().get("results", [])
@@ -276,17 +272,17 @@ Return ONLY the keywords as a comma-separated list, nothing else."""
             print("No photo results returned from Unsplash.")
             return None, None
             
-        # Step 3: Pick the first unused photo in the search results
-        selected_photo = None
-        for photo in photos:
-            p_id = photo.get("id")
-            if p_id not in used_unsplash_ids:
-                selected_photo = photo
-                break
-                
-        if not selected_photo:
-            print("All search result photos have been used previously. Picking first one as fallback.")
-            selected_photo = photos[0]
+        # Step 3: Filter out already used photos
+        unused_photos = [p for p in photos if p.get("id") not in used_unsplash_ids]
+        
+        if not unused_photos:
+            print("All search result photos have been used previously. Resetting pool.")
+            unused_photos = photos
+            
+        # Select randomly from the top 10 remaining unused photos to ensure variety
+        import random
+        selection_pool = unused_photos[:10]
+        selected_photo = random.choice(selection_pool)
             
         best_photo_url = selected_photo["urls"]["full"]
         unsplash_id = selected_photo.get("id")
