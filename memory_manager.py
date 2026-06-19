@@ -42,7 +42,7 @@ def save_memory(data: dict):
     with open(MEMORY_FILE, 'w') as f:
         json.dump(data, f, indent=4)
 
-def log_post(category: str, content: str, post_urn: str = None, image_path: str = None, asset_urn: str = None):
+def log_post(category: str, content: str, post_urn: str = None, image_path: str = None, asset_urn: str = None, unsplash_id: str = None):
     """Logs a new post to the local memory."""
     data = load_memory()
     date_str = datetime.now().isoformat()
@@ -56,7 +56,8 @@ def log_post(category: str, content: str, post_urn: str = None, image_path: str 
         "replied_comments": [],
         "post_urn": post_urn,
         "image_path": image_path,
-        "asset_urn": asset_urn
+        "asset_urn": asset_urn,
+        "unsplash_id": unsplash_id
     }
     data["posts"].append(new_post)
     save_memory(data)

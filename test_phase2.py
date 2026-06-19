@@ -105,6 +105,7 @@ def test_generate_post_image():
     mock_search_resp.json.return_value = {
         "results": [
             {
+                "id": "mocked_photo_id",
                 "urls": {
                     "full": "https://api.unsplash.com/mocked_image_download_url"
                 }
@@ -128,8 +129,9 @@ def test_generate_post_image():
     with patch("content_generator.requests.post", side_effect=mock_requests_selector), \
          patch("content_generator.requests.get", side_effect=mock_requests_selector):
         
-        img_path = generate_post_image("Test post text content for imaging")
+        img_path, unsplash_id = generate_post_image("Test post text content for imaging")
         assert img_path == "/tmp/linkedin_post_image.jpg"
+        assert unsplash_id == "mocked_photo_id"
         assert os.path.exists(img_path)
         with open(img_path, "rb") as f:
             assert f.read() == b"fake Unsplash image bytes"

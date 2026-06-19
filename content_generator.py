@@ -208,17 +208,32 @@ Rules:
 """
     return _call_groq(prompt)
 
-def generate_post_image(post_content: str) -> str:
+def generate_post_image(post_content: str) -> tuple[str, str]:
     """
     Generates a premium image for the post using Unsplash API photo fetching.
     First, uses Groq to extract 2-3 search keywords from the post.
     Then, searches Unsplash and downloads the highest resolution landscape image.
-    Returns the file path on success, or None on failure.
+    Avoids using any image that was previously used by checking memory.json.
+    Returns (file_path, unsplash_id) on success, or (None, None) on failure.
     """
     api_key = config.UNSPLASH_ACCESS_KEY
     if not api_key:
         print("Error: UNSPLASH_ACCESS_KEY is missing from config.")
-        return None
+        return None, None
+
+    # Load memory.json to see what Unsplash IDs were already used
+    used_unsplash_ids = set()
+    memory_path = os.path.join(os.path.dirname(__file__), "memory.json")
+    if os.path.exists(memory_path):
+        try:
+            with open(memory_path, 'r') as f:
+                data = json.load(f)
+                for post in data.get("posts", []):
+                    u_id = post.get("unsplash_id")
+                    if u_id:
+                        used_unsplash_ids.add(u_id)
+        except Exception as e:
+            print(f"Error reading used Unsplash IDs from memory: {e}")
 
     # Step 1: Use Groq to extract 3-4 search keywords from post
     keyword_prompt = f"""You are an expert photo researcher for LinkedIn content.
@@ -239,7 +254,7 @@ Return ONLY the keywords as a comma-separated list, nothing else."""
     keywords = _call_groq(keyword_prompt)
     if not keywords:
         print("Failed to generate search keywords from post.")
-        return None
+        return None, None
 
     print(f"Extracted Unsplash keywords: {keywords}")
     
@@ -259,11 +274,23 @@ Return ONLY the keywords as a comma-separated list, nothing else."""
         photos = response.json().get("results", [])
         if not photos:
             print("No photo results returned from Unsplash.")
-            return None
+            return None, None
             
-        # Step 3: Pick best photo (highest resolution - "full")
-        best_photo_url = photos[0]["urls"]["full"]
-        print(f"Selected Unsplash Photo URL: {best_photo_url}")
+        # Step 3: Pick the first unused photo in the search results
+        selected_photo = None
+        for photo in photos:
+            p_id = photo.get("id")
+            if p_id not in used_unsplash_ids:
+                selected_photo = photo
+                break
+                
+        if not selected_photo:
+            print("All search result photos have been used previously. Picking first one as fallback.")
+            selected_photo = photos[0]
+            
+        best_photo_url = selected_photo["urls"]["full"]
+        unsplash_id = selected_photo.get("id")
+        print(f"Selected Unsplash Photo ID: {unsplash_id}, URL: {best_photo_url}")
         
         # Step 4: Download image
         print("Downloading photo from Unsplash...")
@@ -276,10 +303,10 @@ Return ONLY the keywords as a comma-separated list, nothing else."""
             f.write(img_response.content)
             
         print(f"Successfully downloaded Unsplash image to {image_path}")
-        return image_path
+        return image_path, unsplash_id
     except Exception as e:
         print(f"Error fetching or downloading Unsplash image: {e}")
-        return None
+        return None, None
 
 if __name__ == "__main__":
     pass

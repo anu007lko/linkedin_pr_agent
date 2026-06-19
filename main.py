@@ -67,9 +67,9 @@ def job(specific_topic=None):
 
     # 3. Generate Image
     print("Generating post image...")
-    image_path = generate_post_image(post_content)
+    image_path, unsplash_id = generate_post_image(post_content)
     if image_path:
-        print(f"Post image generated at: {image_path}")
+        print(f"Post image generated at: {image_path} (Unsplash ID: {unsplash_id})")
     else:
         print("No image generated (or generation failed). Proceeding with text-only.")
 
@@ -80,7 +80,7 @@ def job(specific_topic=None):
     if post_urn:
         # 5. Log to Memory
         print("Logging to local memory...")
-        log_post(selected_topic, post_content, post_urn, image_path, asset_urn)
+        log_post(selected_topic, post_content, post_urn, image_path, asset_urn, unsplash_id)
         
         # 6. Notify
         notification_body = (
