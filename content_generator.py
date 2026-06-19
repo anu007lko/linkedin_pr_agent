@@ -129,6 +129,16 @@ def generate_linkedin_post(category: str, search_results: list[dict]) -> str:
     """
     Generates a LinkedIn post based on the search results and specific rules using Groq (llama-3.1-70b-versatile).
     """
+    # Load dynamically optimized style guidelines from memory (avoids circular imports)
+    try:
+        from memory_manager import get_style_guidelines
+        guidelines = get_style_guidelines()
+        dos = guidelines.get("dos", [])
+        donts = guidelines.get("donts", [])
+    except Exception as e:
+        print(f"Error loading style guidelines: {e}")
+        dos, donts = [], []
+
     system_instruction = """System: You are Tarun Srivastava, 14+ year US Staffing expert and AI thought leader.
 Write LinkedIn posts that mix:
 - Thought leadership (Tarun's personal voice and experience)
@@ -148,6 +158,19 @@ Keep under 200 words. Professional but human tone.
 Never sound like AI wrote it.
 Never mention RPO or Recruitment Process Outsourcing anywhere in the post.
 """
+
+    if dos or donts:
+        system_instruction += "\nADDITIONAL RULES FROM HISTORICAL PERFORMANCE ANALYSIS:\n"
+        if dos:
+            system_instruction += "DO:\n"
+            for rule in dos:
+                system_instruction += f"- {rule}\n"
+        if donts:
+            system_instruction += "DON'T:\n"
+            for rule in donts:
+                system_instruction += f"- {rule}\n"
+        print("Injected optimized style guidelines into the post generation prompt.")
+
 
     if category == "Agent Announcement":
         prompt = f"""{system_instruction}

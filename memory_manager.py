@@ -202,5 +202,20 @@ def adjust_posting_weights():
     save_memory(data)
     print(f"Adjusted posting weights successfully: {new_weights}")
 
+def save_style_guidelines(dos: list[str], donts: list[str]):
+    """Saves optimized style guidelines to memory."""
+    data = load_memory()
+    data["optimized_style_guidelines"] = {
+        "dos": dos,
+        "donts": donts,
+        "last_updated": datetime.now().isoformat()
+    }
+    save_memory(data)
+
+def get_style_guidelines() -> dict:
+    """Retrieves optimized style guidelines from memory."""
+    data = load_memory()
+    return data.get("optimized_style_guidelines", {"dos": [], "donts": [], "last_updated": None})
+
 if __name__ == "__main__":
     init_memory()

@@ -104,6 +104,14 @@ def job(specific_topic=None):
 def send_weekly_report_job():
     """Sends a weekly summary of the performance of the posts."""
     print("Generating and sending weekly performance report...")
+    
+    # Run the self-learning optimization loop to refresh the writing rules
+    try:
+        from content_optimizer import optimize_style_guidelines
+        optimize_style_guidelines()
+    except Exception as e:
+        print(f"Error running content optimization: {e}")
+        
     data = load_memory()
     posts = data.get("posts", [])
     weights = data.get("topic_weights", {})
@@ -143,6 +151,23 @@ def send_weekly_report_job():
         report_lines.append(f"   * Avg engagement: {avg_eng:.2f}")
         
     report_lines.append("")
+    
+    # Show optimized guidelines
+    guidelines = data.get("optimized_style_guidelines", {"dos": [], "donts": []})
+    dos = guidelines.get("dos", [])
+    donts = guidelines.get("donts", [])
+    if dos or donts:
+        report_lines.append("Optimized Style Guidelines (Learned from past posts):")
+        if dos:
+            report_lines.append(" Dos:")
+            for rule in dos:
+                report_lines.append(f"   * {rule}")
+        if donts:
+            report_lines.append(" Don'ts:")
+            for rule in donts:
+                report_lines.append(f"   * {rule}")
+        report_lines.append("")
+
     report_lines.append("Recent Posts Log:")
     # Show last 7 posts
     for idx, p in enumerate(reversed(posts[-7:]), 1):
