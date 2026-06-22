@@ -1,6 +1,7 @@
 import random
 import time
 import schedule
+import os
 from search_agent import search_topic
 from content_generator import generate_linkedin_post, generate_post_image
 from linkedin_api import post_to_linkedin
@@ -77,6 +78,14 @@ def job(specific_topic=None):
     print("Posting to LinkedIn...")
     post_urn, asset_urn = post_to_linkedin(post_content, image_path)
     
+    # Delete the downloaded image immediately to save disk space
+    if image_path and os.path.exists(image_path):
+        try:
+            os.remove(image_path)
+            print(f"Cleaned up temporary image file to free space: {image_path}")
+        except Exception as e:
+            print(f"Failed to delete temporary image: {e}")
+            
     if post_urn:
         # 5. Log to Memory
         print("Logging to local memory...")
