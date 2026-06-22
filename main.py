@@ -54,12 +54,39 @@ def job(specific_topic=None):
         send_notification("LinkedIn Agent: Error", msg)
         return
 
-    # 2. Generate Post
+    # 2. Generate Post with deduplication check
+    from difflib import SequenceMatcher
     print("Generating post...")
-    post_content = generate_linkedin_post(selected_topic, search_results)
+    post_content = ""
+    attempts = 3
+    different_angle = False
     
+    for attempt in range(attempts):
+        candidate_content = generate_linkedin_post(selected_topic, search_results, different_angle=different_angle)
+        if not candidate_content:
+            continue
+            
+        # Check similarity against all past posts in memory
+        is_duplicate = False
+        data = load_memory()
+        for past_post in data.get("posts", []):
+            past_content = past_post.get("content", "")
+            if not past_content:
+                continue
+            # Calculate similarity ratio
+            similarity = SequenceMatcher(None, candidate_content, past_content).ratio()
+            if similarity > 0.75: # 75% similarity threshold
+                print(f"Post generation attempt {attempt + 1}: Generated post is too similar to an existing post (similarity: {similarity:.2f}). Retrying...")
+                is_duplicate = True
+                different_angle = True
+                break
+                
+        if not is_duplicate:
+            post_content = candidate_content
+            break
+            
     if not post_content:
-        msg = "Post generation failed. Skipping."
+        msg = "Post generation failed or kept producing duplicate/similar content. Skipping."
         print(msg)
         send_notification("LinkedIn Agent: Error", msg)
         return

@@ -125,7 +125,7 @@ def _call_groq(prompt: str, max_retries: int = 3) -> str:
                 return ""
     return ""
 
-def generate_linkedin_post(category: str, search_results: list[dict]) -> str:
+def generate_linkedin_post(category: str, search_results: list[dict], different_angle: bool = False) -> str:
     """
     Generates a LinkedIn post based on the search results and specific rules using Groq (llama-3.1-70b-versatile).
     """
@@ -209,6 +209,8 @@ Additional Rules:
 - Focus on providing valuable, actionable, or inspiring insights.
 - Do not repeat this prompt or include meta-commentary like "Here is the post".
 """
+        if different_angle:
+            prompt += "\nIMPORTANT: The previously generated post was too similar to an existing post. Please write this post with a COMPLETELY different angle, focus, or hook. Do not repeat the same phrases, concepts, or structure."
 
     return _call_groq(prompt)
 
