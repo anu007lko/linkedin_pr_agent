@@ -316,7 +316,7 @@ RULES:
         img_response = requests.get(best_photo_url, timeout=60)
         img_response.raise_for_status()
         
-        image_path = "/tmp/linkedin_post_image.jpg"
+        image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "downloads", "linkedin_post_image.jpg")
         os.makedirs(os.path.dirname(image_path), exist_ok=True)
         with open(image_path, "wb") as f:
             f.write(img_response.content)

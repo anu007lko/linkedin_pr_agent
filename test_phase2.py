@@ -130,7 +130,8 @@ def test_generate_post_image():
          patch("content_generator.requests.get", side_effect=mock_requests_selector):
         
         img_path, unsplash_id = generate_post_image("Test post text content for imaging")
-        assert img_path == "/tmp/linkedin_post_image.jpg"
+        expected_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "downloads", "linkedin_post_image.jpg")
+        assert img_path == expected_path
         assert unsplash_id == "mocked_photo_id"
         assert os.path.exists(img_path)
         with open(img_path, "rb") as f:
