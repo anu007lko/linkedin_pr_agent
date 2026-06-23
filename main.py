@@ -19,122 +19,128 @@ def job(specific_topic=None):
     """The main daily job that orchestrates the agent."""
     print(f"Starting LinkedIn PR Agent job... (Topic: {specific_topic or 'Dynamic Mix'})")
     
-    selected_topic = specific_topic
-    
-    if not selected_topic:
-        # Try up to 10 times to find a topic that hasn't been posted in the last 3 days
-        for _ in range(10):
-            topic = pick_topic()
-            if can_post_category(topic, days=3):
-                selected_topic = topic
-                break
+    try:
+        selected_topic = specific_topic
         
-        # Fallback: if all topics are on 3-day cooldown, pick the least recently posted category
         if not selected_topic:
-            selected_topic = get_least_recently_posted_category()
-            print(f"Fallback: All categories recently posted. Selected least recently posted category: {selected_topic}")
-
-    # For manually/specifically requested topics, print warning but don't skip
-    if specific_topic and not can_post_category(selected_topic, days=3):
-        print(f"Warning: '{selected_topic}' was posted within the last 3 days, but proceeding as it was explicitly requested.")
-
-    print(f"Selected Topic: {selected_topic}")
-    
-    # 1. Search Web
-    if selected_topic == "Agent Announcement":
-        print("Special Topic: Agent Announcement. Bypassing news search.")
-        search_results = [{"title": "Agent Launch", "snippet": "", "link": ""}]
-    else:
-        print("Searching for latest news...")
-        search_results = search_topic(selected_topic)
-    
-    if not search_results:
-        msg = f"Search failed for topic '{selected_topic}'. Skipping."
-        print(msg)
-        send_notification("LinkedIn Agent: Error", msg)
-        return
-
-    # 2. Generate Post with deduplication check
-    from difflib import SequenceMatcher
-    print("Generating post...")
-    post_content = ""
-    attempts = 3
-    different_angle = False
-    
-    for attempt in range(attempts):
-        candidate_content = generate_linkedin_post(selected_topic, search_results, different_angle=different_angle)
-        if not candidate_content:
-            continue
+            # Try up to 10 times to find a topic that hasn't been posted in the last 3 days
+            for _ in range(10):
+                topic = pick_topic()
+                if can_post_category(topic, days=3):
+                    selected_topic = topic
+                    break
             
-        # Check similarity against all past posts in memory
-        is_duplicate = False
-        data = load_memory()
-        for past_post in data.get("posts", []):
-            past_content = past_post.get("content", "")
-            if not past_content:
+            # Fallback: if all topics are on 3-day cooldown, pick the least recently posted category
+            if not selected_topic:
+                selected_topic = get_least_recently_posted_category()
+                print(f"Fallback: All categories recently posted. Selected least recently posted category: {selected_topic}")
+
+        # For manually/specifically requested topics, print warning but don't skip
+        if specific_topic and not can_post_category(selected_topic, days=3):
+            print(f"Warning: '{selected_topic}' was posted within the last 3 days, but proceeding as it was explicitly requested.")
+
+        print(f"Selected Topic: {selected_topic}")
+        
+        # 1. Search Web
+        if selected_topic == "Agent Announcement":
+            print("Special Topic: Agent Announcement. Bypassing news search.")
+            search_results = [{"title": "Agent Launch", "snippet": "", "link": ""}]
+        else:
+            print("Searching for latest news...")
+            search_results = search_topic(selected_topic)
+        
+        if not search_results:
+            msg = f"Search failed for topic '{selected_topic}'. Skipping."
+            print(msg)
+            send_notification("LinkedIn Agent: Error", msg)
+            return
+
+        # 2. Generate Post with deduplication check
+        from difflib import SequenceMatcher
+        print("Generating post...")
+        post_content = ""
+        attempts = 3
+        different_angle = False
+        
+        for attempt in range(attempts):
+            candidate_content = generate_linkedin_post(selected_topic, search_results, different_angle=different_angle)
+            if not candidate_content:
                 continue
-            # Calculate similarity ratio
-            similarity = SequenceMatcher(None, candidate_content, past_content).ratio()
-            if similarity > 0.75: # 75% similarity threshold
-                print(f"Post generation attempt {attempt + 1}: Generated post is too similar to an existing post (similarity: {similarity:.2f}). Retrying...")
-                is_duplicate = True
-                different_angle = True
+                
+            # Check similarity against all past posts in memory
+            is_duplicate = False
+            data = load_memory()
+            for past_post in data.get("posts", []):
+                past_content = past_post.get("content", "")
+                if not past_content:
+                    continue
+                # Calculate similarity ratio
+                similarity = SequenceMatcher(None, candidate_content, past_content).ratio()
+                if similarity > 0.75: # 75% similarity threshold
+                    print(f"Post generation attempt {attempt + 1}: Generated post is too similar to an existing post (similarity: {similarity:.2f}). Retrying...")
+                    is_duplicate = True
+                    different_angle = True
+                    break
+                    
+            if not is_duplicate:
+                post_content = candidate_content
                 break
                 
-        if not is_duplicate:
-            post_content = candidate_content
-            break
+        if not post_content:
+            msg = "Post generation failed or kept producing duplicate/similar content. Skipping."
+            print(msg)
+            send_notification("LinkedIn Agent: Error", msg)
+            return
             
-    if not post_content:
-        msg = "Post generation failed or kept producing duplicate/similar content. Skipping."
-        print(msg)
-        send_notification("LinkedIn Agent: Error", msg)
-        return
+        print(f"Generated Post:\n{post_content}\n")
+
+        # 3. Generate Image
+        print("Generating post image...")
+        image_path, unsplash_id = generate_post_image(post_content)
+        if image_path:
+            print(f"Post image generated at: {image_path} (Unsplash ID: {unsplash_id})")
+        else:
+            print("No image generated (or generation failed). Proceeding with text-only.")
+
+        # 4. Post to LinkedIn
+        print("Posting to LinkedIn...")
+        post_urn, asset_urn = post_to_linkedin(post_content, image_path)
         
-    print(f"Generated Post:\n{post_content}\n")
-
-    # 3. Generate Image
-    print("Generating post image...")
-    image_path, unsplash_id = generate_post_image(post_content)
-    if image_path:
-        print(f"Post image generated at: {image_path} (Unsplash ID: {unsplash_id})")
-    else:
-        print("No image generated (or generation failed). Proceeding with text-only.")
-
-    # 4. Post to LinkedIn
-    print("Posting to LinkedIn...")
-    post_urn, asset_urn = post_to_linkedin(post_content, image_path)
-    
-    # Delete the downloaded image immediately to save disk space
-    if image_path and os.path.exists(image_path):
-        try:
-            os.remove(image_path)
-            print(f"Cleaned up temporary image file to free space: {image_path}")
-        except Exception as e:
-            print(f"Failed to delete temporary image: {e}")
+        # Delete the downloaded image immediately to save disk space
+        if image_path and os.path.exists(image_path):
+            try:
+                os.remove(image_path)
+                print(f"Cleaned up temporary image file to free space: {image_path}")
+            except Exception as e:
+                print(f"Failed to delete temporary image: {e}")
+                
+        if post_urn:
+            # 5. Log to Memory
+            print("Logging to local memory...")
+            log_post(selected_topic, post_content, post_urn, image_path, asset_urn, unsplash_id)
             
-    if post_urn:
-        # 5. Log to Memory
-        print("Logging to local memory...")
-        log_post(selected_topic, post_content, post_urn, image_path, asset_urn, unsplash_id)
-        
-        # 6. Notify
-        notification_body = (
-            f"Topic: {selected_topic}\n"
-            f"URN: {post_urn}\n"
-            f"Asset URN: {asset_urn or 'None (Text Only)'}\n"
-            f"Local Image Path: {image_path or 'None'}\n\n"
-            f"Content:\n{post_content}"
-        )
-        send_notification(
-            subject="LinkedIn Agent: Successfully Posted", 
-            body=notification_body
-        )
-        print("Job complete.")
-    else:
-        msg = "Failed to post to LinkedIn. Check logs."
-        print(msg)
-        send_notification("LinkedIn Agent: Error", msg)
+            # 6. Notify
+            notification_body = (
+                f"Topic: {selected_topic}\n"
+                f"URN: {post_urn}\n"
+                f"Asset URN: {asset_urn or 'None (Text Only)'}\n"
+                f"Local Image Path: {image_path or 'None'}\n\n"
+                f"Content:\n{post_content}"
+            )
+            send_notification(
+                subject="LinkedIn Agent: Successfully Posted", 
+                body=notification_body
+            )
+            print("Job complete.")
+        else:
+            msg = "Failed to post to LinkedIn. Check logs."
+            print(msg)
+            send_notification("LinkedIn Agent: Error", msg)
+    except Exception as e:
+        import traceback
+        err_msg = f"An unexpected error occurred during the daily job:\n\n{traceback.format_exc()}"
+        print(err_msg)
+        send_notification("LinkedIn Agent: Error - Job Execution Failed", err_msg)
 
 
 def send_weekly_report_job():

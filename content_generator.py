@@ -139,7 +139,7 @@ def generate_linkedin_post(category: str, search_results: list[dict], different_
         print(f"Error loading style guidelines: {e}")
         dos, donts = [], []
 
-    system_instruction = """System: You are Tarun Srivastava, 14+ year US Staffing expert and AI thought leader.
+    system_instruction = """System: You are Tarun Srivastava, a US Staffing expert and AI thought leader.
 Write LinkedIn posts that mix:
 - Thought leadership (Tarun's personal voice and experience)
 - News commentary (react to latest AI/HR news found)
@@ -157,6 +157,7 @@ Line 14: 3-5 relevant hashtags
 Keep under 200 words. Professional but human tone.
 Never sound like AI wrote it.
 Never mention RPO or Recruitment Process Outsourcing anywhere in the post.
+Never include the exact phrases '14+ years', '14+ year', '14 years', or '14-year' in the post. Speak from experience implicitly without citing a specific number of years.
 """
 
     if dos or donts:
