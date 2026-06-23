@@ -11,32 +11,42 @@ DEFAULT_WEIGHTS = {
     "AI in Talent Acquisition": 0.15
 }
 
-def init_memory():
-    """Initializes the local memory JSON file if it doesn't exist."""
-    if not os.path.exists(MEMORY_FILE):
+def init_memory(force: bool = False):
+    """Initializes or resets the local memory JSON file."""
+    if force or not os.path.exists(MEMORY_FILE) or os.path.getsize(MEMORY_FILE) == 0:
         data = {
             "posts": [],
             "topic_weights": DEFAULT_WEIGHTS
         }
         with open(MEMORY_FILE, 'w') as f:
             json.dump(data, f, indent=4)
+        print("Initialized empty memory.json database.")
     else:
-        # Read and ensure topic_weights is there
-        data = load_memory()
-        if "topic_weights" not in data:
-            data["topic_weights"] = DEFAULT_WEIGHTS
-            save_memory(data)
+        # Read manually to avoid circular recursion
+        try:
+            with open(MEMORY_FILE, 'r') as f:
+                data = json.load(f)
+            if "topic_weights" not in data:
+                data["topic_weights"] = DEFAULT_WEIGHTS
+                with open(MEMORY_FILE, 'w') as f:
+                    json.dump(data, f, indent=4)
+        except (json.JSONDecodeError, ValueError):
+            # Overwrite if corrupted
+            print("Corrupted memory.json found during init. Overwriting with defaults.")
+            init_memory(force=True)
 
 def load_memory() -> dict:
-    if not os.path.exists(MEMORY_FILE):
-        init_memory()
-    with open(MEMORY_FILE, 'r') as f:
-        try:
+    if not os.path.exists(MEMORY_FILE) or os.path.getsize(MEMORY_FILE) == 0:
+        init_memory(force=True)
+        
+    try:
+        with open(MEMORY_FILE, 'r') as f:
             return json.load(f)
-        except json.JSONDecodeError:
-            # Re-initialize if corrupted
-            init_memory()
-            return load_memory()
+    except (json.JSONDecodeError, ValueError) as e:
+        print(f"Error decoding memory.json ({e}). Re-initializing database...")
+        init_memory(force=True)
+        with open(MEMORY_FILE, 'r') as f:
+            return json.load(f)
 
 def save_memory(data: dict):
     with open(MEMORY_FILE, 'w') as f:
