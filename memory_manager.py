@@ -5,9 +5,10 @@ from datetime import datetime, timedelta
 MEMORY_FILE = os.path.join(os.path.dirname(__file__), "memory.json")
 
 DEFAULT_WEIGHTS = {
-    "AI tools and breakthroughs": 0.40,
-    "AI in Human Resources": 0.25,
-    "New AI product launches": 0.20,
+    "AI tools and breakthroughs": 0.30,
+    "AI in Human Resources": 0.20,
+    "Agentic AI": 0.20,
+    "New AI product launches": 0.15,
     "AI in Talent Acquisition": 0.15
 }
 
@@ -26,8 +27,26 @@ def init_memory(force: bool = False):
         try:
             with open(MEMORY_FILE, 'r') as f:
                 data = json.load(f)
+            
+            # Ensure all DEFAULT_WEIGHTS categories exist in topic_weights
+            weights_updated = False
             if "topic_weights" not in data:
                 data["topic_weights"] = DEFAULT_WEIGHTS
+                weights_updated = True
+            else:
+                # If there are missing categories, merge them in and re-normalize weights
+                missing_keys = [k for k in DEFAULT_WEIGHTS if k not in data["topic_weights"]]
+                if missing_keys:
+                    for k in missing_keys:
+                        data["topic_weights"][k] = DEFAULT_WEIGHTS[k]
+                    # Re-normalize weights so they sum to 1.0
+                    total = sum(data["topic_weights"].values())
+                    if total > 0:
+                        for k in data["topic_weights"]:
+                            data["topic_weights"][k] = round(data["topic_weights"][k] / total, 4)
+                    weights_updated = True
+                    
+            if weights_updated:
                 with open(MEMORY_FILE, 'w') as f:
                     json.dump(data, f, indent=4)
         except (json.JSONDecodeError, ValueError):

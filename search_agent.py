@@ -7,7 +7,7 @@ RSS_FEEDS = [
 ]
 
 KEYWORDS = [
-    "AI", "HR", "Talent Acquisition", "AI tools", "machine learning"
+    "AI", "HR", "Talent Acquisition", "AI tools", "machine learning", "Agentic AI", "AI agents", "agentic"
 ]
 
 def search_topic(topic_query: str, max_results: int = 5) -> list[dict]:
