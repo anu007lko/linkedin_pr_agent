@@ -5,11 +5,10 @@ from datetime import datetime, timedelta
 MEMORY_FILE = os.path.join(os.path.dirname(__file__), "memory.json")
 
 DEFAULT_WEIGHTS = {
-    "AI tools and breakthroughs": 0.30,
-    "AI in Human Resources": 0.20,
-    "Agentic AI": 0.20,
-    "New AI product launches": 0.15,
-    "AI in Talent Acquisition": 0.15
+    "Agentic AI in Workflows": 0.25,
+    "Reasoning Models": 0.25,
+    "Physical AI & World Models": 0.25,
+    "AI Literacy & Upskilling": 0.25
 }
 
 def init_memory(force: bool = False):
@@ -34,16 +33,9 @@ def init_memory(force: bool = False):
                 data["topic_weights"] = DEFAULT_WEIGHTS
                 weights_updated = True
             else:
-                # If there are missing categories, merge them in and re-normalize weights
-                missing_keys = [k for k in DEFAULT_WEIGHTS if k not in data["topic_weights"]]
-                if missing_keys:
-                    for k in missing_keys:
-                        data["topic_weights"][k] = DEFAULT_WEIGHTS[k]
-                    # Re-normalize weights so they sum to 1.0
-                    total = sum(data["topic_weights"].values())
-                    if total > 0:
-                        for k in data["topic_weights"]:
-                            data["topic_weights"][k] = round(data["topic_weights"][k] / total, 4)
+                # If the set of keys is different, reset to DEFAULT_WEIGHTS to enforce the new topics
+                if set(data["topic_weights"].keys()) != set(DEFAULT_WEIGHTS.keys()):
+                    data["topic_weights"] = DEFAULT_WEIGHTS
                     weights_updated = True
                     
             if weights_updated:

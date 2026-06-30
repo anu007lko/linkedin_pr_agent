@@ -30,16 +30,16 @@ def test_weight_adjustment():
         init_memory()
         
         mock_posts = [
-            {"date": "2026-06-01T09:00:00", "category": "AI tools and breakthroughs", "content": "Post 1 content", "likes": 50, "comments": 10, "engagement_score": 70},
-            {"date": "2026-06-02T09:00:00", "category": "AI tools and breakthroughs", "content": "Post 2 content", "likes": 40, "comments": 8, "engagement_score": 56},
-            {"date": "2026-06-03T09:00:00", "category": "AI in Human Resources", "content": "Post 3 content", "likes": 20, "comments": 2, "engagement_score": 24},
-            {"date": "2026-06-04T09:00:00", "category": "AI in Human Resources", "content": "Post 4 content", "likes": 15, "comments": 3, "engagement_score": 21},
-            {"date": "2026-06-05T09:00:00", "category": "New AI product launches", "content": "Post 5 content", "likes": 5, "comments": 0, "engagement_score": 5},
-            {"date": "2026-06-06T09:00:00", "category": "New AI product launches", "content": "Post 6 content", "likes": 7, "comments": 1, "engagement_score": 9},
-            {"date": "2026-06-07T09:00:00", "category": "AI in Talent Acquisition", "content": "Post 7 content", "likes": 12, "comments": 2, "engagement_score": 16},
-            {"date": "2026-06-08T09:00:00", "category": "AI in Talent Acquisition", "content": "Post 8 content", "likes": 10, "comments": 1, "engagement_score": 12},
-            {"date": "2026-06-09T09:00:00", "category": "AI tools and breakthroughs", "content": "Post 9 content", "likes": 30, "comments": 5, "engagement_score": 40},
-            {"date": "2026-06-10T09:00:00", "category": "AI in Human Resources", "content": "Post 10 content", "likes": 18, "comments": 2, "engagement_score": 22}
+            {"date": "2026-06-01T09:00:00", "category": "Agentic AI in Workflows", "content": "Post 1 content", "likes": 50, "comments": 10, "engagement_score": 70},
+            {"date": "2026-06-02T09:00:00", "category": "Agentic AI in Workflows", "content": "Post 2 content", "likes": 40, "comments": 8, "engagement_score": 56},
+            {"date": "2026-06-03T09:00:00", "category": "Reasoning Models", "content": "Post 3 content", "likes": 20, "comments": 2, "engagement_score": 24},
+            {"date": "2026-06-04T09:00:00", "category": "Reasoning Models", "content": "Post 4 content", "likes": 15, "comments": 3, "engagement_score": 21},
+            {"date": "2026-06-05T09:00:00", "category": "Physical AI & World Models", "content": "Post 5 content", "likes": 5, "comments": 0, "engagement_score": 5},
+            {"date": "2026-06-06T09:00:00", "category": "Physical AI & World Models", "content": "Post 6 content", "likes": 7, "comments": 1, "engagement_score": 9},
+            {"date": "2026-06-07T09:00:00", "category": "AI Literacy & Upskilling", "content": "Post 7 content", "likes": 12, "comments": 2, "engagement_score": 16},
+            {"date": "2026-06-08T09:00:00", "category": "AI Literacy & Upskilling", "content": "Post 8 content", "likes": 10, "comments": 1, "engagement_score": 12},
+            {"date": "2026-06-09T09:00:00", "category": "Agentic AI in Workflows", "content": "Post 9 content", "likes": 30, "comments": 5, "engagement_score": 40},
+            {"date": "2026-06-10T09:00:00", "category": "Reasoning Models", "content": "Post 10 content", "likes": 18, "comments": 2, "engagement_score": 22}
         ]
         
         data = load_memory()
@@ -51,8 +51,8 @@ def test_weight_adjustment():
         adjusted = get_topic_weights()
         print("Adjusted weights:", adjusted)
         
-        assert adjusted["AI tools and breakthroughs"] > adjusted["New AI product launches"], "AI tools should have higher weight than launches"
-        print("Assert passed: AI tools weight is higher than new launches.")
+        assert adjusted["Agentic AI in Workflows"] > adjusted["Physical AI & World Models"], "Agentic AI in Workflows should have higher weight than Physical AI"
+        print("Assert passed: Agentic AI weight is higher than Physical AI.")
         
         print("\n--- Testing Weekly Report Generation ---")
         send_weekly_report_job()
