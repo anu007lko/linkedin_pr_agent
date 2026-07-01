@@ -42,7 +42,8 @@ The suite consists of two separate agents running as continuous background daemo
 | **`linkedin_api.py`** | Module | Handles LinkedIn REST API operations (`ugcPosts`, `userinfo`, token checks). |
 | **`search_agent.py`** | Module | Queries news sources and RSS feeds for trending articles. |
 | **`content_generator.py`** | Module | Calls Groq API (llama-3.3-70b-versatile) to generate under-200-word visionary post copy. |
-| **`memory_manager.py`** | Module | Saves posts, checks 7-day rule, adjusts weights, compiles report. |
+| **`content_optimizer.py`** | Module | Audits performance and generates optimized Dos and Don'ts via Gemini/Groq. |
+| **`memory_manager.py`** | Module | Saves posts, checks 7-day rule, adjusts weights, compiles report, and handles auto-healing database errors. |
 | **`memory.json`** | Data | Local database containing logged posts and current topic weights. |
 | **`lead_searcher.py`** | Module | Handles scraping operations to extract contact data. |
 | **`lead_memory.py`** | Module | Checks for duplicate leads and stores entries in JSON/CSV formats. |
@@ -53,6 +54,7 @@ The suite consists of two separate agents running as continuous background daemo
 | **`requirements.txt`** | Setup | Python dependency packages requirement list. |
 | **`test_linkedin_bot.py`** | Test | Unit tests for LinkedIn REST API calls and token expiry checks. |
 | **`test_lead_agent.py`** | Test | Unit tests for the Lead search and log pipeline. |
+| **`test_optimizer.py`** | Test | Unit tests for performance optimizer behavior under mock statistics. |
 | **`test_phase2.py`** | Test | Unit tests for topic weights tuning and SMTP report compiler. |
 
 ---
@@ -98,7 +100,7 @@ SMTP_PASSWORD=your_gmail_app_specific_password
 *   **Model**: `llama-3.3-70b-versatile`
 *   **System Prompt**:
     ```
-    System: You are Tarun Srivastava, 14+ year US Staffing expert and AI thought leader.
+    System: You are Tarun Srivastava, a US Staffing expert and AI thought leader.
     Write LinkedIn posts that mix:
     - Thought leadership (Tarun's personal voice and experience)
     - News commentary (react to latest AI/HR news found)
@@ -116,6 +118,7 @@ SMTP_PASSWORD=your_gmail_app_specific_password
     Keep under 200 words. Professional but human tone.
     Never sound like AI wrote it.
     Never mention RPO or Recruitment Process Outsourcing anywhere in the post.
+    Never include the exact phrases '14+ years', '14+ year', '14 years', or '14-year' in the post. Speak from experience implicitly without citing a specific number of years.
     ```
 
 ### 2. Unsplash Image Keyword Extraction

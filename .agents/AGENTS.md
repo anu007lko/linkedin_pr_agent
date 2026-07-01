@@ -9,7 +9,7 @@ This project runs a lightweight background daemon suite. Please adhere to the fo
 
 2.  **No RPO Mentions (Locked)**:
     - Never write or let the LLM generate posts mentioning "RPO" or "Recruitment Process Outsourcing".
-    - Persona is strictly: "14+ year US Staffing expert and AI thought leader".
+    - Persona is strictly: "US Staffing expert and AI thought leader". Never include the exact phrases '14+ years', '14+ year', '14 years', or '14-year' in the post. Speak from experience implicitly.
 
 3.  **Strict Layout constraints (Locked)**:
     - The generated LinkedIn post copy must adhere to:
