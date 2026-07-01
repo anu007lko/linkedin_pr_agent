@@ -68,6 +68,9 @@ def job(specific_topic=None):
                 continue
                 
             # Check similarity against all past posts in memory
+            # ponytail: Using difflib.SequenceMatcher for O(N) linear post comparisons.
+            # Ceiling: Performance slows as the number of posts in memory.json increases.
+            # Upgrade path: Migrate to local vector embedding similarity search if history > 1,000 posts.
             is_duplicate = False
             data = load_memory()
             for past_post in data.get("posts", []):

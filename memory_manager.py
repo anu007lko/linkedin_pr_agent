@@ -3,6 +3,9 @@ import os
 from datetime import datetime, timedelta
 
 MEMORY_FILE = os.path.join(os.path.dirname(__file__), "memory.json")
+# ponytail: Using flat-file JSON for database storage. 
+# Ceiling: Lack of concurrent write locks and O(N) memory scaling for reads/writes.
+# Upgrade path: SQLite database if post logs exceed 10,000+ entries.
 
 DEFAULT_WEIGHTS = {
     "Agentic AI in Workflows": 0.25,
